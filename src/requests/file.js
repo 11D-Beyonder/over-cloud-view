@@ -3,6 +3,7 @@ import {getRequest, postRequest, putRequest} from "@/requests/http";
 export const getFileListByPath = (_) => getRequest("/file/file-list/path", _);
 export const getFileListByType = (_) => getRequest("/file/file-list/type", _);
 export const createFolder = (_) => postRequest("/file/folder", _);
+export const getFileContent = (_) => getRequest("/transfer/download", _);
 export const getFileStorage = (_) => getRequest("/transfer/storage", _);
 export const getFileTree = (_) => getRequest("/file/tree", _);
 export const deleteFile = (_) => putRequest("/file/delete-flag", _);

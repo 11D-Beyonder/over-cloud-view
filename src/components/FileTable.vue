@@ -130,213 +130,228 @@
 </template>
 
 <script>
-    import {deleteFile, renameFile} from "@/requests/file";
+import {deleteFile, renameFile} from "@/requests/file";
 
-    export default {
-        name: "FileTable",
-        props: {
-            tableData: {
-                type: Array,
-                required: true
-            },
-            loading: {
-                type: Boolean,
-                required: true
-            },
-            fileType: {
-                type: Number,
-                required: true
-            }
+export default {
+    name: "FileTable",
+    props: {
+        tableData: {
+            type: Array,
+            required: true
         },
-        methods: {
-            handleClickDelete(row) {
-                // 消息弹框提示用户
-                this.$confirm("是否删除 " + (row.extension ? `${row.name}.${row.extension}` : `${row.name}`) + " ？", "提示", {
-                    confirmButtonText: "确定",
-                    cancelButtonText: "取消",
-                    showClose: false,
-                    type: "warning"
-                }).then(() => {
-                    deleteFile({id: row.id}).then((res) => {
-                        if (res.success) {
-                            this.$emit("getTableData");
-                            this.$message.success("删除成功");
-                        } else {
-                            this.$message.error(res.message);
-                        }
-                    });
-                }).catch(() => {
-                    this.$message.info("已取消删除");
-                });
-            },
-            handleClickMove(row) {
-                this.$emit("handleSelectFile", false, row);
-                this.$emit("handleMoveFile", true);
-            },
-            handleClickRename(row) {
-                this.$prompt("请输入文件名", "提示", {
-                    confirmButtonText: "确定",
-                    cancelButtonText: "取消",
-                    inputValue: row.extension ? `${row.name}.${row.extension}` : `${row.name}`,
-                    inputPattern: /\S/, //  文件名不能为空
-                    inputErrorMessage: "请输入文件名",
-                    closeOnClickModal: false,
-                    showClose: false
-                }).then(({value}) => {
-                    let index = value.lastIndexOf(".");
-                    let fileName = value;
-                    let fileExtension = null;
-                    if (!row.isFolder) {
-                        fileName = index === -1 ? value : value.substr(0, index);
-                        fileExtension = index === -1 ? null : value.substr(index + 1);
-                    }
-                    renameFile({
-                        id: row.id,
-                        name: fileName,
-                        extension: fileExtension,
-                        isFolder: row.isFolder
-                    }).then((res) => {
-                        if (res.success) {
-                            this.$emit("getTableData");
-                            this.$message.success("文件已重命名");
-                        } else {
-                            this.$message.error(res.message);
-                        }
-                    });
-                }).catch(() => {
-                    this.$message.info("重命名已取消");
-                });
-            },
-            handleSelectRow(selection) {
-                this.$emit("handleSelectFile", true, selection);
-            },
-            /**
-             * 点击文件夹
-             * 进行路由跳转
-             * 将文件夹路径写入url中
-             *
-             * @author Joe
-             */
-            handleClickFileName(row) {
-                if (this.fileType === 5) {
-                    return;
-                }
-                if (row.isFolder) {
-                    this.$router.push({
-                        query: {
-                            fileType: 0,
-                            filePath: `${row.path}${row.name}/`
-                        }
-                    });
-                } else if (row.extension && ["jpg", "png", "jpeg", "bmp", "tif"].includes(row.extension.toLowerCase())) {
-                    let data = {
-                        imageVisible: true,
-                        imageList: [{
-                            url: `/api${row.url}`,
-                            downloadLink: `/api/transfer/download?id=${row.id}`,
-                            name: row.name,
-                            extension: row.extension
-                        }],
-                        activeIndex: 0
-                    };
-                    this.$store.commit("setImageViewData", data);
-                }
-            },
-            calculateFileSize(size) {
-                if (!size) {
-                    return "";
-                }
-                size = (size / 1024).toFixed(2);
-                if (size < 1024) {
-                    return size + " KB";
-                }
-                size = (size / 1024).toFixed(2);
-                if (size < 1024) {
-                    return size + " MB";
-                }
-                size = (size / 1024).toFixed(2);
-                if (size < 1024) {
-                    return size + " GB";
-                }
-                size = (size / 1024).toFixed(2);
-                return size + " TB";
-            },
-            setFileImg(row) {
-                if (row.isFolder) {
-                    return this.fileImgMap.fold;
-                } else if (row.url && row.extension && ["jpg", "png", "jpeg", "bmp", "tif", "mp4", "mov", "m4a"].includes(row.extension.toLowerCase())) {
-                    return this.downloadImgMin(row.url);
-                } else {
-                    //  可以识别文件类型的文件
-                    return (row.extension && this.fileImgMap[row.extension.toLowerCase()]) || this.fileImgMap.other;
-                }
-            }
+        loading: {
+            type: Boolean,
+            required: true
         },
-        computed: {
-            selectedColumnList() {
-                return this.$store.getters.selectedColumnList;
-            }
-        },
-        watch: {
-            operationIsUnfold(newValue) {
-                sessionStorage.setItem("operationIsUnfold", newValue);
-            }
-        },
-        created() {
-            this.operationIsUnfold = sessionStorage.getItem("operationIsUnfold") === "true";
-        },
-        data() {
-            return {
-                fileTypeMap: {
-                    md: "markdown 笔记",
-                    txt: "文本文件",
-                    exe: "应用程序"
-                },
-                fileImgMap: {
-                    apk: require("@/assets/image/apk.png"),
-                    csv: require("@/assets/image/csv.png"),
-                    doc: require("@/assets/image/word.png"),
-                    docx: require("@/assets/image/word.png"),
-                    xls: require("@/assets/image/excel.png"),
-                    xlsx: require("@/assets/image/excel.png"),
-                    exe: require("@/assets/image/exe.png"),
-                    jpg: require("@/assets/image/jpg.png"),
-                    fold: require("@/assets/image/folder.png"),
-                    gif: require("@/assets/image/gif.png"),
-                    html: require("@/assets/image/html.png"),
-                    json: require("@/assets/image/json.png"),
-                    mp3: require("@/assets/image/mp3.png"),
-                    mp4: require("@/assets/image/mp4.png"),
-                    other: require("@/assets/image/other.png"),
-                    pdf: require("@/assets/image/pdf.png"),
-                    pptx: require("@/assets/image/power_point.png"),
-                    ppt: require("@/assets/image/power_point.png"),
-                    rar: require("@/assets/image/rar.png"),
-                    svg: require("@/assets/image/svg.png"),
-                    txt: require("@/assets/image/txt.png"),
-                    zip: require("@/assets/image/zip.png"),
-                    md: require("@/assets/image/md.png")
-                },
-                operationIsUnfold: true
-            };
+        fileType: {
+            type: Number,
+            required: true
         }
-    };
+    },
+    methods: {
+        handleClickDelete(row) {
+            // 消息弹框提示用户
+            this.$confirm("是否删除 " + (row.extension ? `${row.name}.${row.extension}` : `${row.name}`) + " ？", "提示", {
+                confirmButtonText: "确定",
+                cancelButtonText: "取消",
+                showClose: false,
+                type: "warning"
+            }).then(() => {
+                deleteFile({id: row.id}).then((res) => {
+                    if (res.success) {
+                        this.$emit("getTableData");
+                        this.$message.success("删除成功");
+                    } else {
+                        this.$message.error(res.message);
+                    }
+                });
+            }).catch(() => {
+                this.$message.info("已取消删除");
+            });
+        },
+        handleClickMove(row) {
+            this.$emit("handleSelectFile", false, row);
+            this.$emit("handleMoveFile", true);
+        },
+        handleClickRename(row) {
+            this.$prompt("请输入文件名", "提示", {
+                confirmButtonText: "确定",
+                cancelButtonText: "取消",
+                inputValue: row.extension ? `${row.name}.${row.extension}` : `${row.name}`,
+                inputPattern: /\S/, //  文件名不能为空
+                inputErrorMessage: "请输入文件名",
+                closeOnClickModal: false,
+                showClose: false
+            }).then(({value}) => {
+                let index = value.lastIndexOf(".");
+                let fileName = value;
+                let fileExtension = null;
+                if (!row.isFolder) {
+                    fileName = index === -1 ? value : value.substr(0, index);
+                    fileExtension = index === -1 ? null : value.substr(index + 1);
+                }
+                renameFile({
+                    id: row.id,
+                    name: fileName,
+                    extension: fileExtension,
+                    isFolder: row.isFolder
+                }).then((res) => {
+                    if (res.success) {
+                        this.$emit("getTableData");
+                        this.$message.success("文件已重命名");
+                    } else {
+                        this.$message.error(res.message);
+                    }
+                });
+            }).catch(() => {
+                this.$message.info("重命名已取消");
+            });
+        },
+        handleSelectRow(selection) {
+            this.$emit("handleSelectFile", true, selection);
+        },
+        /**
+         * 点击文件夹
+         * 进行路由跳转
+         * 将文件夹路径写入url中
+         *
+         * @author Joe
+         */
+        handleClickFileName(row) {
+            if (this.fileType === 5) {
+                return;
+            }
+            if (row.isFolder) {
+                this.$router.push({
+                    query: {
+                        fileType: 0,
+                        filePath: `${row.path}${row.name}/`
+                    }
+                });
+            } else if (row.extension && ["jpg", "png", "jpeg", "bmp", "tif"].includes(row.extension.toLowerCase())) {
+                let data = {
+                    imageVisible: true,
+                    imageList: [{
+                        url: `/api${row.url}`,
+                        downloadLink: `/api/transfer/download?id=${row.id}`,
+                        name: row.name,
+                        extension: row.extension
+                    }],
+                    activeIndex: 0
+                };
+                this.$store.commit("setImageViewData", data);
+            } else if (row.extension && ["mp4"].includes(row.extension.toLowerCase())) {
+                // console.log(row.url)
+                this.$emit("handleVideo", "http://localhost:8081" + row.url);
+            } else if (row.extension && ["md"].includes(row.extension.toLowerCase())) {
+                // console.log(row)
+                this.$emit("handleMD", row);
+            } else if (row.extension && ["mp3"].includes(row.extension.toLowerCase())) {
+                // console.log(row)
+                this.$emit("handleAudio", row);
+            }else if (row.extension && ["java","c","py","cpp"].includes(row.extension.toLowerCase())) {
+                // console.log(row)
+                this.$emit("handleCode", row);
+            }else if (row.extension && ["pdf"].includes(row.extension.toLowerCase())) {
+                // console.log(row)
+                this.$emit("handlePdf", row);
+            }
+        },
+        calculateFileSize(size) {
+            if (!size) {
+                return "";
+            }
+            size = (size / 1024).toFixed(2);
+            if (size < 1024) {
+                return size + " KB";
+            }
+            size = (size / 1024).toFixed(2);
+            if (size < 1024) {
+                return size + " MB";
+            }
+            size = (size / 1024).toFixed(2);
+            if (size < 1024) {
+                return size + " GB";
+            }
+            size = (size / 1024).toFixed(2);
+            return size + " TB";
+        },
+        setFileImg(row) {
+            if (row.isFolder) {
+                return this.fileImgMap.fold;
+            } else if (row.url && row.extension && ["jpg", "png", "jpeg", "bmp", "tif", "mp4", "mov", "m4a"].includes(row.extension.toLowerCase())) {
+                return this.downloadImgMin(row.url);
+            } else {
+                //  可以识别文件类型的文件
+                return (row.extension && this.fileImgMap[row.extension.toLowerCase()]) || this.fileImgMap.other;
+            }
+        }
+    },
+    computed: {
+        selectedColumnList() {
+            return this.$store.getters.selectedColumnList;
+        }
+    },
+    watch: {
+        operationIsUnfold(newValue) {
+            sessionStorage.setItem("operationIsUnfold", newValue);
+        }
+    },
+    created() {
+        this.operationIsUnfold = sessionStorage.getItem("operationIsUnfold") === "true";
+    },
+    data() {
+        return {
+            fileTypeMap: {
+                md: "markdown 笔记",
+                txt: "文本文件",
+                exe: "应用程序"
+            },
+            fileImgMap: {
+                apk: require("@/assets/image/apk.png"),
+                csv: require("@/assets/image/csv.png"),
+                doc: require("@/assets/image/word.png"),
+                docx: require("@/assets/image/word.png"),
+                xls: require("@/assets/image/excel.png"),
+                xlsx: require("@/assets/image/excel.png"),
+                exe: require("@/assets/image/exe.png"),
+                jpg: require("@/assets/image/jpg.png"),
+                fold: require("@/assets/image/folder.png"),
+                gif: require("@/assets/image/gif.png"),
+                html: require("@/assets/image/html.png"),
+                json: require("@/assets/image/json.png"),
+                mp3: require("@/assets/image/mp3.png"),
+                mp4: require("@/assets/image/mp4.png"),
+                other: require("@/assets/image/other.png"),
+                pdf: require("@/assets/image/pdf.png"),
+                pptx: require("@/assets/image/power_point.png"),
+                ppt: require("@/assets/image/power_point.png"),
+                rar: require("@/assets/image/rar.png"),
+                svg: require("@/assets/image/svg.png"),
+                txt: require("@/assets/image/txt.png"),
+                zip: require("@/assets/image/zip.png"),
+                md: require("@/assets/image/md.png")
+            },
+            operationIsUnfold: true
+        };
+    }
+};
 </script>
 
 <style lang="stylus" scoped>
-    @import '~@/assets/style/mixins.styl'
+@import '~@/assets/style/mixins.styl'
 
-    .file-table
-        width 100%
+.file-table
+    width 100%
 
-        >>> .el-table__body-wrapper
-            setScrollbar(8px)
+    >>> .el-table__body-wrapper
+        setScrollbar(8px)
 
-    .el-icon-circle-plus, .el-icon-remove
-        margin-left 8px
-        cursor pointer
-        font-size 16px
+.el-icon-circle-plus, .el-icon-remove
+    margin-left 8px
+    cursor pointer
+    font-size 16px
 
-        &:hover
-            opacity 0.5
+    &:hover
+        opacity 0.5
 </style>
