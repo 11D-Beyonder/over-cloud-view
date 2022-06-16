@@ -7,8 +7,12 @@ export const getFileContent = (_) => getRequest("/transfer/download", _);
 export const getFileStorage = (_) => getRequest("/transfer/storage", _);
 export const getFileTree = (_) => getRequest("/file/tree", _);
 export const deleteFile = (_) => putRequest("/file/delete-flag", _);
+export const deleteFileDeep = (_) => putRequest("/file/delete-deep", _);
+export const recoverFile = (_) => putRequest("/file/recover-flag", _);
+
 export const moveFile = (_) => putRequest("/file/path", _);
 export const renameFile = (_) => putRequest("/file/name-extension", _);
 export const batchMoveFile = (_) => putRequest("/file/batch-path", _);
 export const batchDeleteFile = (_) => putRequest("/file/batch-delete-flag", _);
 export const getDeletedFile = (_) => getRequest("/file/trash", _);
+export const putShareFile = (_) => putRequest("/share/add", _);

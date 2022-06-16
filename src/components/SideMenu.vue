@@ -31,6 +31,10 @@
             <i class="el-icon-takeaway-box"/>
             <span slot="title">回收站</span>
         </el-menu-item>
+        <el-menu-item index="6" :route="{ name: 'Home', query: { fileType: 6 } }">
+            <i class="el-icon-share"/>
+            <span slot="title">分享</span>
+        </el-menu-item>
         <div class="storage-wrapper" v-show="!isCollapsed">
             <el-progress :percentage="storagePercentage" :color="storageColor" :show-text="false"/>
             <div class="text">
@@ -48,12 +52,19 @@
             storageValue: {
                 type: Number,
                 require: true
-            }
+            },
+            storageMaxValue: {
+                type: Number,
+                require: true
+            },
+            storagePercentage: {
+                type: Number,
+                require: true
+            },
         },
         data() {
             return {
                 isCollapsed: false,
-                storageMaxValue: Math.pow(1024, 3),
                 storageColor: [
                     {color: "#67C23A", percentage: 50},
                     {color: "#E6A23C", percentage: 80},
@@ -72,6 +83,7 @@
                 const KB = Math.pow(1024, 2);
                 const MB = Math.pow(1024, 3);
                 const GB = Math.pow(1024, 4);
+                console.log('storageTrans'+size);
                 if (status) {
                     //    截取整数部分
                     if (!size) {
@@ -109,9 +121,9 @@
                 //  获取当前路由参数中包含的文件类型
                 return this.$route.query.fileType.toString();
             },
-            storagePercentage() {
-                return (this.storageValue / this.storageMaxValue) * 100;
-            }
+            // storagePercentage() {
+            //     return (this.storageValue / this.storageMaxValue) * 100;
+            // }
         }
     };
 </script>

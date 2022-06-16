@@ -7,6 +7,7 @@ module.exports = {
     publicPath: "/",
     devServer: {
         host: "localhost", // 服务端ip
+        port: 8080,
         open: false, // 不直接弹出网页
         proxy: {
             // 只有"/api/...." 才使用代理

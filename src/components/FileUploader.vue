@@ -38,7 +38,7 @@
             return {
                 options: {
                     target: "api/transfer/upload",
-                    chunkSize: 1024 * 1024,
+                    chunkSize: 10*1024 * 1024,
                     fileParameterName: "file",
                     maxChunkRetries: 3,
                     testChunks: true,

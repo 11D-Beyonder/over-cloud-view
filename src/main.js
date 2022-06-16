@@ -14,6 +14,7 @@ import 'mavon-editor/dist/css/index.css'
 import VueCodemirror from 'vue-codemirror'
 import 'codemirror/lib/codemirror.css'
 import pdf from 'vue-pdf'
+import VueClipboards from 'vue-clipboard2'
 
 Vue.config.productionTip = false;
 Vue.use(ElementUI);
@@ -32,6 +33,7 @@ Vue.use(VueCodemirror, /* {
   events: ['scroll', ...]
 } */)
 Vue.use(pdf)
+Vue.use(VueClipboards);
 new Vue({
     router,
     store,

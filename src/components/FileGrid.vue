@@ -36,7 +36,7 @@
                         imageVisible: true,
                         imageList: fileList.map((item) => {
                             return {
-                                url: `/api${item.url}`,
+                                url: `/api/${item.url}`,
                                 downloadLink: `/api/transfer/download?id=${item.id}`,
                                 name: item.name,
                                 extension: item.extension

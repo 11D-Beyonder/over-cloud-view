@@ -1,6 +1,6 @@
 <template>
     <div class="home">
-        <side-menu class="home-left" :storage-value="storageValue"/>
+        <side-menu class="home-left" :storage-value="storageValue" :storage-max-value="storageMaxValue" :storage-percentage="storagePercentage"/>
         <div class="home-right">
             <div class="operation-wrapper">
                 <operation-menu :fileType="fileType" :filePath="filePath" @getTableData="getFileData"
@@ -16,7 +16,7 @@
                         :table-data="tableData" @getTableData="getFileData" :loading="loading"
                         @handleSelectFile="setOperationFile" @handleMoveFile="setMoveFileDialog"
                         @handleVideo="videoPlay" @handleMD="showMarkDown" @handleAudio="audioPlay"
-                        @handleCode="handleCode" @handlePdf="handlePdf"
+                        @handleCode="handleCode" @handlePdf="handlePdf" @handleClickShare="handleShare"
             />
             <file-grid :file-type="fileType" v-if="(fileType===1||fileType===3)&&displayMode===1"
                        :table-data="tableData"
@@ -59,6 +59,20 @@
         </el-dialog>
 
 
+        <el-dialog title="分享文件" :visible.sync="dialogFormVisible">
+            <el-form ref="form" :model="form" label-width="80px">
+                <el-form-item label="分享码">
+                    <el-input v-model="shareUrl" autocomplete="off" placeholder="请设置您的专属分析码"></el-input>
+                </el-form-item>
+            </el-form>
+
+            <div slot="footer" class="dialog-footer">
+                <el-button @click="dialogFormVisible = false">取 消</el-button>
+                <el-button type="primary" @click="handleDoShare">确 定</el-button>
+            </div>
+        </el-dialog>
+
+
     </div>
 </template>
 
@@ -70,7 +84,7 @@ import {
     getFileListByType,
     getFileTree,
     moveFile,
-    getFileContent,
+    getFileContent, getFileStorage, putShareFile,
 } from "@/requests/file";
 import ColumnSelector from "@/components/ColumnSelector";
 import SideMenu from "@/components/SideMenu";
@@ -112,7 +126,9 @@ export default {
     },
     data() {
         return {
-            storageValue: 580080,
+            storageValue: 0,
+            storageMaxValue:1,
+            storagePercentage:1,
             loading: false,
             tableData: [],
             pageInfo: {
@@ -162,6 +178,8 @@ export default {
             showPdf: false,
             loadingTask: undefined,
             numPages: 1,
+            dialogFormVisible: false,
+            shareUrl:'',
         };
     },
     computed: {
@@ -191,6 +209,7 @@ export default {
         }
     },
     mounted() {
+        this.getStorageSpace();
         this.getFileData();
     },
     methods: {
@@ -211,6 +230,29 @@ export default {
                 })
                 .catch(_ => {
                 });
+        },
+        handleShare(row){
+            this.item=row;
+            // this.shareUrl=row.id;
+            this.dialogFormVisible=true;
+        },
+        handleDoShare(){
+            this.dialogFormVisible = false;
+            putShareFile({userFileId:this.item.id,urlkey:this.shareUrl}).then((res) => {
+                // console.log(res)
+                // this.storageValue=res.data.storage_used;
+                // this.storageMaxValue=res.data.storage_total;
+                // this.storagePercentage=(this.storageValue / this.storageMaxValue) * 100;
+            });
+        },
+        getStorageSpace(){
+            getFileStorage().then((res) => {
+                console.log(res)
+                this.storageValue=res.data.storage_used;
+                this.storageMaxValue=res.data.storage_total;
+                this.storagePercentage=(this.storageValue / this.storageMaxValue) * 100;
+            });
+
         },
         getFileData() {
             this.loading = true;
@@ -304,7 +346,7 @@ export default {
             console.log(this.videoPath);
         },
         audioPlay(row) {
-            this.audio.url = "http://localhost:8081" + row.url;
+            this.audio.url = "http://121.4.251.57:8081/" + row.url;
             this.audio.name = row.name;
             this.audio.artist = '';
             this.audio.cover = 'https://p1.music.126.net/5zs7IvmLv7KahY3BFzUmrg==/109951163635241613.jpg?param=300y300',
@@ -333,7 +375,7 @@ export default {
         handlePdf(row) {
             this.showPdf = true;
             this.dialogVisible = true;
-            this.loadingTask = pdf.createLoadingTask("http://localhost:8080/api" + row.url);
+            this.loadingTask = pdf.createLoadingTask("http://121.4.251.57/api/" + row.url);
             this.loadingTask.promise.then((pdf) => {
                 this.numPages = pdf.numPages;
                 console.log(loadingTask.numPages)

@@ -20,6 +20,13 @@
                 </div>
             </template>
         </el-table-column>
+        <el-table-column prop="name" label="分享码" v-if="fileType===6">
+            <template slot-scope="scope">
+                <div style="cursor: pointer" @click="handleClickUrlKey(scope.row.urlKey)">
+                    {{ scope.row.urlKey }}
+                </div>
+            </template>
+        </el-table-column>
         <el-table-column prop="path" label="原位置" v-if="fileType===5" sortable>
             <template slot-scope="scope">
                 <span>{{ scope.row.path }}</span>
@@ -40,7 +47,7 @@
         </el-table-column>
         <el-table-column prop="deleteTime" label="删除时间" width="150" v-if="fileType===5" sortable/>
         <el-table-column prop="updateTime" label="修改时间" width="150"
-                         v-if="selectedColumnList.includes('updateTime')&&fileType!==5"
+                         v-if="selectedColumnList.includes('updateTime')&&fileType!==5 && fileType!==6"
                          sortable/>
         <el-table-column label="操作" :width="operationIsUnfold?200:100">
             <template slot="header">
@@ -51,19 +58,21 @@
             <template slot-scope="scope">
                 <div class="operation-unfold" v-if="operationIsUnfold">
                     <el-tooltip content="永久性删除" placement="top" v-if="fileType===5">
-                        <el-button type="danger" icon="el-icon-delete" circle/>
+                        <el-button type="danger" icon="el-icon-delete" circle
+                                   @click.native="handleClickDeleteDeep(scope.row)"
+                        />
                     </el-tooltip>
-                    <el-tooltip content="删除" placement="top" v-if="fileType!==5">
+                    <el-tooltip content="删除" placement="top" v-if="fileType!==5 && fileType!==6">
                         <el-button type="text" icon="el-icon-delete"
                                    @click.native="handleClickDelete(scope.row)"/>
                     </el-tooltip>
-                    <el-tooltip content="移动" placement="top" v-if="fileType!==5">
+                    <el-tooltip content="移动" placement="top" v-if="fileType!==5 && fileType!==6">
                         <el-button type="text" icon="el-icon-position" @click.native="handleClickMove(scope.row)"/>
                     </el-tooltip>
-                    <el-tooltip content="重命名" placement="top" v-if="fileType!==5">
+                    <el-tooltip content="重命名" placement="top" v-if="fileType!==5 && fileType!==6">
                         <el-button type="text" icon="el-icon-edit" @click.native="handleClickRename(scope.row)"/>
                     </el-tooltip>
-                    <el-tooltip content="下载" placement="top" v-if="fileType!==5">
+                    <el-tooltip content="下载" placement="top" v-if="fileType!==5 && fileType!==6">
                         <el-button type="text" v-if="scope.row.isFolder===false">
                             <a target="_blank" style="display: block;color: inherit"
                                :href="`/api/transfer/download?id=${scope.row.id}`" v-if="scope.row.isFolder===false">
@@ -72,11 +81,18 @@
                         </el-button>
                     </el-tooltip>
                     <el-tooltip content="恢复" placement="top" v-if="fileType===5">
-                        <el-button type="primary" icon="el-icon-magic-stick" circle/>
+                        <el-button type="primary" icon="el-icon-magic-stick" circle
+                                   @click.native="handleClickRecover(scope.row)"
+                        />
                     </el-tooltip>
                     <el-tooltip content="打开所在文件夹">
-                        <el-button type="text" icon="el-icon-folder-opened" v-if="fileType!==0&&fileType!==5"
+                        <el-button type="text" icon="el-icon-folder-opened"
+                                   v-if="fileType!==0&&fileType!==5 && fileType!==6"
                                    @click.native="$router.push({ query: { fileType: 0, filePath: scope.row.path } })"/>
+                    </el-tooltip>
+                    <el-tooltip content="分享" placement="top"  @click.native="handleClickShare(scope.row)"
+                                v-if="scope.row.isFolder===false&&fileType!==5 && fileType!==6">
+                            <i class="el-icon-share"/>
                     </el-tooltip>
                 </div>
                 <el-dropdown trigger="click" v-else>
@@ -85,40 +101,51 @@
                         <i class="el-icon-setting"/>
                     </el-button>
                     <el-dropdown-menu slot="dropdown" style="text-align: center">
-                        <el-dropdown-item v-if="fileType===5">
-                            <el-tooltip content="永久性删除">
+                        <el-dropdown-item @click.native="handleClickDeleteDeep(scope.row)" v-if="fileType===5">
+                            <el-tooltip placement="left" content="永久性删除">
                                 <i class="el-icon-delete"/>
                             </el-tooltip>
                         </el-dropdown-item>
-                        <el-dropdown-item v-if="fileType===5">
-                            <el-tooltip content="恢复">
+                        <el-dropdown-item @click.native="handleClickRecover(scope.row)" v-if="fileType===5">
+                            <el-tooltip placement="left" content="恢复">
                                 <i class="el-icon-magic-stick"/>
                             </el-tooltip>
                         </el-dropdown-item>
-                        <el-dropdown-item @click.native="handleClickDelete(scope.row)" v-if="fileType!==5">
-                            <el-tooltip content="删除">
+                        <el-dropdown-item @click.native="handleClickDelete(scope.row)"
+                                          v-if="fileType!==5 && fileType!==6">
+                            <el-tooltip placement="left" content="删除">
                                 <i class="el-icon-delete"/>
                             </el-tooltip>
                         </el-dropdown-item>
-                        <el-dropdown-item @click.native="handleClickMove(scope.row)" v-if="fileType!==5">
-                            <el-tooltip content="移动">
+                        <el-dropdown-item @click.native="handleClickMove(scope.row)"
+                                          v-if="fileType!==5 && fileType!==6">
+                            <el-tooltip placement="left" content="移动">
                                 <i class="el-icon-position"/>
                             </el-tooltip>
                         </el-dropdown-item>
-                        <el-dropdown-item @click.native="handleClickRename(scope.row)" v-if="fileType!==5">
-                            <el-tooltip content="重命名">
+                        <el-dropdown-item @click.native="handleClickRename(scope.row)"
+                                          v-if="fileType!==5 && fileType!==6">
+                            <el-tooltip placement="left" content="重命名">
                                 <i class="el-icon-edit"/>
                             </el-tooltip>
                         </el-dropdown-item>
-                        <el-dropdown-item v-if="scope.row.isFolder===false&&fileType!==5">
+                        <el-dropdown-item v-if="scope.row.isFolder===false&&fileType!==5 && fileType!==6">
                             <a target="_blank" style="display: block;color: inherit"
                                :href="`/api/transfer/download?id=${scope.row.id}`">
                                 <i class="el-icon-download"/>
                             </a>
                         </el-dropdown-item>
-                        <el-dropdown-item v-if="fileType!==0&&fileType!==5"
+
+                        <el-dropdown-item @click.native="handleClickShare(scope.row)"
+                                          v-if="scope.row.isFolder===false&&fileType!==5 && fileType!==6">
+                            <el-tooltip placement="left" content="分享">
+                                <i class="el-icon-share"/>
+                            </el-tooltip>
+                        </el-dropdown-item>
+
+                        <el-dropdown-item v-if="fileType!==0&&fileType!==5 && fileType!==6"
                                           @click.native="$router.push({ query: { fileType: 0, filePath: scope.row.path } })">
-                            <el-tooltip content="打开所在文件夹">
+                            <el-tooltip placement="left" content="打开所在文件夹">
                                 <i class="el-icon-folder-opened"/>
                             </el-tooltip>
                         </el-dropdown-item>
@@ -127,10 +154,11 @@
             </template>
         </el-table-column>
     </el-table>
+
 </template>
 
 <script>
-import {deleteFile, renameFile} from "@/requests/file";
+import {deleteFile, deleteFileDeep, recoverFile, renameFile} from "@/requests/file";
 
 export default {
     name: "FileTable",
@@ -149,6 +177,21 @@ export default {
         }
     },
     methods: {
+        handleClickShare(row) {
+            this.$emit("handleClickShare", row);
+
+        },
+        handleClickUrlKey(row) {
+            row = "http://121.4.251.57:8081/transfer/share/download?url=" + row;
+            this.$copyText(row).then(function (e) {
+                alert('Copied')
+            }, function (e) {
+                alert('Can not copy')
+            })
+        },
+        onCopy: function (e) {
+            alert('复制成功！')
+        },
         handleClickDelete(row) {
             // 消息弹框提示用户
             this.$confirm("是否删除 " + (row.extension ? `${row.name}.${row.extension}` : `${row.name}`) + " ？", "提示", {
@@ -167,6 +210,46 @@ export default {
                 });
             }).catch(() => {
                 this.$message.info("已取消删除");
+            });
+        },
+        handleClickDeleteDeep(row) {
+            // 消息弹框提示用户
+            this.$confirm("是否【永久】删除 " + (row.extension ? `${row.name}.${row.extension}` : `${row.name}`) + " ？", "提示", {
+                confirmButtonText: "确定",
+                cancelButtonText: "取消",
+                showClose: false,
+                type: "warning"
+            }).then(() => {
+                deleteFileDeep({id: row.id}).then((res) => {
+                    if (res.success) {
+                        this.$emit("getTableData");
+                        this.$message.success("永久删除成功");
+                    } else {
+                        this.$message.error(res.message);
+                    }
+                });
+            }).catch(() => {
+                this.$message.info("已取消永久删除");
+            });
+        },
+        handleClickRecover(row) {
+            // 消息弹框提示用户
+            this.$confirm("是否恢复 " + (row.extension ? `${row.name}.${row.extension}` : `${row.name}`) + " ？", "提示", {
+                confirmButtonText: "确定",
+                cancelButtonText: "取消",
+                showClose: false,
+                type: "warning"
+            }).then(() => {
+                recoverFile({id: row.id}).then((res) => {
+                    if (res.success) {
+                        this.$emit("getTableData");
+                        this.$message.success("恢复成功");
+                    } else {
+                        this.$message.error(res.message);
+                    }
+                });
+            }).catch(() => {
+                this.$message.info("已取消恢复");
             });
         },
         handleClickMove(row) {
@@ -232,7 +315,7 @@ export default {
                 let data = {
                     imageVisible: true,
                     imageList: [{
-                        url: `/api${row.url}`,
+                        url: `/api/${row.url}`,
                         downloadLink: `/api/transfer/download?id=${row.id}`,
                         name: row.name,
                         extension: row.extension
@@ -242,17 +325,17 @@ export default {
                 this.$store.commit("setImageViewData", data);
             } else if (row.extension && ["mp4"].includes(row.extension.toLowerCase())) {
                 // console.log(row.url)
-                this.$emit("handleVideo", "http://localhost:8081" + row.url);
+                this.$emit("handleVideo", "http://121.4.251.57:8081/" + row.url);
             } else if (row.extension && ["md"].includes(row.extension.toLowerCase())) {
                 // console.log(row)
                 this.$emit("handleMD", row);
             } else if (row.extension && ["mp3"].includes(row.extension.toLowerCase())) {
                 // console.log(row)
                 this.$emit("handleAudio", row);
-            }else if (row.extension && ["java","c","py","cpp"].includes(row.extension.toLowerCase())) {
+            } else if (row.extension && ["java", "c", "py", "cpp"].includes(row.extension.toLowerCase())) {
                 // console.log(row)
                 this.$emit("handleCode", row);
-            }else if (row.extension && ["pdf"].includes(row.extension.toLowerCase())) {
+            } else if (row.extension && ["pdf"].includes(row.extension.toLowerCase())) {
                 // console.log(row)
                 this.$emit("handlePdf", row);
             }
